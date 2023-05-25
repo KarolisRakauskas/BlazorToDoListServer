@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace BlazorToDoListAPI.Migrations
 {
     [DbContext(typeof(AplicationDbContext))]
-    [Migration("20230523180330_InitialCreate")]
+    [Migration("20230525180843_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />

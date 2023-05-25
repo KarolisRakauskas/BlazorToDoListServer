@@ -10,7 +10,7 @@ namespace BlazorToDoListAPI.Data
 			
 		}
 
-		DbSet<ToDoActive> ToDoActives {  get; set; }
-		DbSet<ToDoPassive> ToDoPassives { get; set;}
+		public DbSet<ToDoActive> ToDoActives {  get; set; }
+		public DbSet<ToDoPassive> ToDoPassives { get; set;}
 	}
 }

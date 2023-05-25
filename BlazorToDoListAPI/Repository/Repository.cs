@@ -9,10 +9,10 @@ namespace BlazorToDoListAPI.Repository
 		private readonly AplicationDbContext _context;
 		internal DbSet<T> dbSet;
 
-		public Repository(AplicationDbContext context, DbSet<T> dbSet)
+		public Repository(AplicationDbContext context)
 		{
 			_context = context;
-			this.dbSet = dbSet;
+			this.dbSet = _context.Set<T>();
 		}
 
 		public async Task CreateAsync(T entity)
@@ -29,8 +29,13 @@ namespace BlazorToDoListAPI.Repository
 
 		public async Task<List<T>> GetAllAsync()
 		{
-			IQueryable<T> querey = dbSet;
-			return await querey.ToListAsync();
+			IQueryable<T> query = dbSet;
+			return await query.ToListAsync();
+		}
+
+		public async Task<T> GetAsync(int id)
+		{
+			return await dbSet.FindAsync(id);
 		}
 
 		public async Task SaveAsync()

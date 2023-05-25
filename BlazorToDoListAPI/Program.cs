@@ -1,4 +1,6 @@
 using BlazorToDoListAPI.Data;
+using BlazorToDoListAPI.Repository;
+using BlazorToDoListAPI.Repository.IRepository;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +11,9 @@ builder.Services.AddDbContext<AplicationDbContext>(option => {
 		builder.Configuration.GetConnectionString("DefaultConnection")
 		);
 });
-builder.Services.AddControllers();
+builder.Services.AddScoped<IToDoActiveRepository, ToDoActiveRepository>();
+builder.Services.AddScoped<IToDoPassiveRepository, ToDoPassiveRepository>();
+builder.Services.AddControllers().AddNewtonsoftJson();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
