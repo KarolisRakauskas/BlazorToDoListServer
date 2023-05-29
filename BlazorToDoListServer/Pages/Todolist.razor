@@ -1,7 +1,15 @@
 ﻿@page "/todolist"
+@using BlazorToDoListLibrary;
 @using BlazorToDoListServer.Model;
+@using System.Text.Json;
+@using System.Text.Json.Serialization;
+@using System.Text;
+@using Newtonsoft.Json;
+@inject IHttpClientFactory ClientFactory;
+
 
 <PageTitle>To Do List</PageTitle>
+
 <div class="container mt-3">
 	<h3 class="text-center">Blazor To Do List! You have @todos.Count(todo => !todo.IsDone) tasks to do...</h3>
 
@@ -9,55 +17,118 @@
 		<div class="col-10">
 			<input placeholder="Something todo..." class="form-control" @bind="newTodo" />
 		</div>
-		<button @onclick="AddTodo" class="col-2 btn btn-primary"><i class="bi bi-plus-circle"></i></button>
+		<button @onclick="CreateTask" class="col-2 btn btn-primary"><i class="bi bi-plus-circle"></i></button>
 	</div>
 </div>
 
 
 <ul class="container mt-3">
-	@foreach (var todo in todos)
+	@if(todos != null)
 	{
-		<li class="input-group mb-3 col-10">
-			<div class="input-group-text">
-				<input class="form-check-input mt-0" type="checkbox" @bind="todo.IsDone" aria-label="Checkbox for following text input">
-			</div>
-			@if (todo.IsDone)
-			{
-				<input type="text" class="form-control" disabled aria-label="Text input with checkbox" @bind="todo.Title">
-			} else 
-			{
-				<input type="text" class="form-control" aria-label="Text input with checkbox" @bind="todo.Title">
-			}
-			<button  @onclick="(() => Delete(todo))" class="col-2 btn btn-danger"><i class="bi bi-trash3-fill"></i></button>
-		</li>
-		
+		@foreach (var todo in todos)
+		{
+			<li class="input-group mb-3 col-10">
+				<div class="input-group-text">
+					<input class="form-check-input mt-0" type="checkbox" @bind="todo.IsDone" aria-label="Checkbox for following text input">
+				</div>
+				@if (todo.IsDone)
+				{
+					<input type="text" class="form-control" disabled aria-label="Text input with checkbox" @bind="todo.Title">
+				} else
+				{
+					<input type="text" class="form-control" aria-label="Text input with checkbox" @bind="todo.Title">
+				}
+				<button  @onclick="(() => DeleteTask(todo.Id))" class="col-2 btn btn-danger"><i class="bi bi-trash3-fill"></i></button>
+			</li>
+		}	
 	}
 </ul>
 
+<button @onclick="RefreshData" class="col-2 btn btn-danger"> Refresh Data</button>
 
-@code {
-	private List<TodoItem> todos = new();
+@code
+{
+	public IEnumerable<ToDoActive>? todos = Array.Empty<ToDoActive>();
+	private bool shouldRender;
 	private string? newTodo;
 
-	private void AddTodo()
+	private APIResponse response { get; set; }
+
+	public Todolist()
 	{
-		todos.Add(
-			new TodoItem 
-			{ 
-				Title = newTodo, IsDone = false, DateTime = DateTime.Now
-			});
-
-		todos.Sort(
-			delegate(TodoItem a, TodoItem b)
-			{ 
-				return b.DateTime.CompareTo(a.DateTime); 
-			});
-
-		newTodo = string.Empty;
+		this.response = new();
 	}
 
-	private void Delete(TodoItem task)
+	protected override bool ShouldRender() => shouldRender;
+
+	protected override async Task OnInitializedAsync()
 	{
-		todos.Remove(task);
+		todos = await FetchData();
+		shouldRender = true;
+	}
+
+	protected async Task<IEnumerable<ToDoActive>?> FetchData()
+	{
+		var client = ClientFactory.CreateClient();
+
+		HttpRequestMessage message = new HttpRequestMessage(HttpMethod.Get, new Uri("https://localhost:7270/api/ToDoActiveAPI/GetToDoActive"));
+		message.Headers.Add("Accept", "application/json");
+
+		HttpResponseMessage apiResponse = await client.SendAsync(message);
+
+		var apiContent = await apiResponse.Content.ReadAsStringAsync();
+		var APIResponse = JsonConvert.DeserializeObject<APIResponse>(apiContent);
+
+		if (APIResponse != null && APIResponse.IsSuccess)
+		{
+			return JsonConvert.DeserializeObject<IEnumerable<ToDoActive>>(Convert.ToString(APIResponse.Result));
+		}
+		return null;
+	}
+
+	protected async Task DeleteTask(int id)
+	{
+		var client = ClientFactory.CreateClient();
+
+		HttpRequestMessage message = new HttpRequestMessage();
+		message.Headers.Add("Accept", "application/json");
+		message.Method = HttpMethod.Delete;
+		message.RequestUri = new Uri("https://localhost:7270/api/ToDoActiveAPI/DeleteToDoActive?id=" + id);
+		HttpResponseMessage apiResponse = await client.SendAsync(message);
+
+		RefreshData();
+	}
+
+	protected async Task CreateTask()
+	{
+		if (string.IsNullOrWhiteSpace(newTodo))
+		{
+			return;
+		}
+
+		ToDoActive toDoActive = new()
+			{
+				Title = newTodo,
+				IsDone = false
+			};
+
+		var client = ClientFactory.CreateClient();
+
+		HttpRequestMessage message = new HttpRequestMessage();
+		message.Headers.Add("Accept", "application/json");
+		message.Method = HttpMethod.Post;
+		message.RequestUri = new Uri("https://localhost:7270/api/ToDoActiveAPI/CreateToDoActive");
+		message.Content = new StringContent(JsonConvert.SerializeObject(toDoActive), Encoding.UTF8, "application/json");
+		HttpResponseMessage apiResponse = await client.SendAsync(message);
+
+		newTodo = string.Empty;
+		RefreshData();
+	}
+
+
+	async void RefreshData()
+	{
+		todos = await FetchData();
+		StateHasChanged();
 	}
 }

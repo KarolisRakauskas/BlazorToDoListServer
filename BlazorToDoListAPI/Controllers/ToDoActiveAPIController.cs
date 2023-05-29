@@ -6,7 +6,7 @@ using System.Net;
 
 namespace BlazorToDoListAPI.Controllers
 {
-	[Route("api/[controller]")]
+	[Route("api/[controller]/[action]")]
 	[ApiController]
 	public class ToDoActiveAPIController : Controller
 	{
@@ -35,6 +35,41 @@ namespace BlazorToDoListAPI.Controllers
 				_response.IsSuccess = false;
 				_response.ErrorMessages = new List<string> { ex.ToString() };
 			}
+			return _response;
+		}
+
+		[HttpGet]
+		[ProducesResponseType(StatusCodes.Status200OK)]
+		[ProducesResponseType(StatusCodes.Status400BadRequest)]
+		[ProducesResponseType(StatusCodes.Status404NotFound)]
+		public async Task<ActionResult<APIResponse>> GetOneToDoActive(int id)
+		{
+			if (id == 0)
+			{
+				_response.StatusCode = HttpStatusCode.BadRequest;
+				return BadRequest(_response);
+			}
+
+			try
+			{
+				ToDoActive toDoActive = await _context.GetAsync(id);
+
+				if (toDoActive == null)
+				{
+					_response.StatusCode = HttpStatusCode.NotFound;
+					return NotFound(_response);
+				}
+
+				_response.Result = toDoActive;
+				_response.StatusCode = HttpStatusCode.OK;
+				return Ok(_response);
+			}
+			catch (Exception ex)
+			{
+				_response.IsSuccess = false;
+				_response.ErrorMessages = new List<string> { ex.ToString() };
+			}
+
 			return _response;
 		}
 

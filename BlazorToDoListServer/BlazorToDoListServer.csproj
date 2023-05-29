@@ -11,6 +11,11 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.JsonPatch" Version="7.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="7.0.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\BlazorToDoListLibrary\BlazorToDoListLibrary.csproj" />
   </ItemGroup>
 
